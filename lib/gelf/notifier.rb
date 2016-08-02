@@ -23,11 +23,11 @@ module GELF
       self.rescue_network_errors = false
 
       self.default_options = default_options
-      self.default_options['version'] = SPEC_VERSION
-      self.default_options['host'] ||= Socket.gethostname
-      self.default_options['level'] ||= GELF::UNKNOWN
-      self.default_options['facility'] ||= 'gelf-rb'
-      self.default_options['protocol'] ||= GELF::Protocol::UDP
+      self.default_options[:version] = SPEC_VERSION
+      self.default_options[:host] ||= Socket.gethostname
+      self.default_options[:level] ||= GELF::UNKNOWN
+      self.default_options[:facility] ||= 'gelf-rb'
+      self.default_options[:protocol] ||= GELF::Protocol::UDP
 
       if self.default_options['protocol'] == GELF::Protocol::TCP
         @sender = GELF::Transport::TCP.new([[host, port]])

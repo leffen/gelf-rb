@@ -1,10 +1,11 @@
+require 'gelf/transport/udp'
+require 'gelf/transport/tcp'
+
 module GELF
   # Graylog2 notifier.
   class Notifier
-    @last_chunk_id = 0
-    class << self
-      attr_accessor :last_chunk_id
-    end
+    # Maximum number of GELF chunks as per GELF spec
+    MAX_CHUNKS = 128
 
     attr_accessor :enabled, :collect_file_and_line, :rescue_network_errors
     attr_reader :max_chunk_size, :level, :default_options, :level_mapping
@@ -15,6 +16,7 @@ module GELF
     def initialize(host = 'localhost', port = 12201, max_size = 'WAN', default_options = {})
       @enabled = true
       @collect_file_and_line = true
+      @random = Random.new
 
       self.level = GELF::DEBUG
       self.max_chunk_size = max_size
@@ -25,8 +27,13 @@ module GELF
       self.default_options['host'] ||= Socket.gethostname
       self.default_options['level'] ||= GELF::UNKNOWN
       self.default_options['facility'] ||= 'gelf-rb'
+      self.default_options['protocol'] ||= GELF::Protocol::UDP
 
-      @sender = RubyUdpSender.new([[host, port]])
+      if self.default_options['protocol'] == GELF::Protocol::TCP
+        @sender = GELF::Transport::TCP.new([[host, port]])
+      else
+        @sender = GELF::Transport::UDP.new([[host, port]])
+      end
       self.level_mapping = :logger
     end
 
@@ -145,7 +152,12 @@ module GELF
       extract_hash(*args)
       @hash['level'] = message_level unless message_level.nil?
       if @hash['level'] >= level
-        @sender.send_datagrams(datagrams_from_hash)
+        if self.default_options['protocol'] == GELF::Protocol::TCP
+          validate_hash
+          @sender.send(@hash.to_json + "\0")
+        else
+          @sender.send_datagrams(datagrams_from_hash)
+        end
       end
     end
 
@@ -213,9 +225,12 @@ module GELF
 
       # Maximum total size is 8192 byte for UDP datagram. Split to chunks if bigger. (GELF v1.0 supports chunking)
       if data.count > @max_chunk_size
-        id = GELF::Notifier.last_chunk_id += 1
+        id = @random.bytes(8)
         msg_id = Digest::MD5.digest("#{Time.now.to_f}-#{id}")[0, 8]
         num, count = 0, (data.count.to_f / @max_chunk_size).ceil
+        if count > MAX_CHUNKS
+          raise ArgumentError, "Data too big (#{data.count} bytes), would create more than #{MAX_CHUNKS} chunks!"
+        end
         data.each_slice(@max_chunk_size) do |slice|
           datagrams << "\x1e\x0f" + msg_id + [num, count, *slice].pack('C*')
           num += 1
@@ -227,10 +242,14 @@ module GELF
       datagrams
     end
 
-    def serialize_hash
+    def validate_hash
       raise ArgumentError.new("Hash is empty.") if @hash.nil? || @hash.empty?
 
       @hash['level'] = @level_mapping[@hash['level']]
+    end
+
+    def serialize_hash
+      validate_hash
 
       Zlib::Deflate.deflate(@hash.to_json).bytes
     end

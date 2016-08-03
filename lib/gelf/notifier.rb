@@ -257,7 +257,8 @@ module GELF
     def self.stringify_keys(hash)
       hash.keys.each do |key|
         value, key_s = hash.delete(key), key.to_s
-        raise ArgumentError.new("Both #{key.inspect} and #{key_s} are present.") if hash.has_key?(key_s)
+        # raise ArgumentError.new("Both #{key.inspect} and #{key_s} are present.") if hash.has_key?(key_s)
+        puts "Both #{key.inspect} and #{key_s} are present." if hash.has_key?(key_s)
         hash[key_s] = value
       end
       hash

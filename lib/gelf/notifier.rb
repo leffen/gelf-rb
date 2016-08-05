@@ -1,6 +1,8 @@
 require 'gelf/transport/udp'
 require 'gelf/transport/tcp'
 
+require 'pp'
+
 module GELF
   # Graylog2 notifier.
   class Notifier
@@ -154,6 +156,7 @@ module GELF
       if @hash['level'] >= level
         if self.default_options['protocol'] == GELF::Protocol::TCP
           validate_hash
+          pp @hash
           @sender.send(@hash.to_json + "\0")
         else
           @sender.send_datagrams(datagrams_from_hash)

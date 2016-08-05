@@ -241,7 +241,6 @@ module GELF
         datagrams << data.to_a.pack('C*')
       end
 
-      pp datagrams
       datagrams
     end
 
@@ -253,7 +252,7 @@ module GELF
 
     def serialize_hash
       validate_hash
-
+      pp @hash
       Zlib::Deflate.deflate(@hash.to_json).bytes
     end
 

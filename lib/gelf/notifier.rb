@@ -158,8 +158,10 @@ module GELF
       if @hash['level'] >= level
         if self.default_options['protocol'] == GELF::Protocol::TCP
           validate_hash
+          puts "Sending TCP #{@hash} "
           @sender.send(@hash.to_json + "\0")
         else
+          puts "Sending UDP #{@hash} "
           @sender.send_datagrams(datagrams_from_hash)
         end
       end

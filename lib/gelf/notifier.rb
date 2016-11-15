@@ -152,6 +152,8 @@ module GELF
     end
 
     def notify_with_level!(message_level, *args)
+      puts "Notify with level #{@enabled} #{args}"
+
       return unless @enabled
       extract_hash(*args)
       @hash['level'] = message_level unless message_level.nil?

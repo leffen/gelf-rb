@@ -51,6 +51,7 @@ module GELF
     def <<(message)
       notify_with_level(GELF::UNKNOWN, 'short_message' => message)
     end
+
   end
 
   # Graylog2 notifier, compatible with Ruby Logger.

@@ -32,8 +32,10 @@ module GELF
       self.default_options['protocol'] ||= GELF::Protocol::UDP
 
       if self.default_options['protocol'] == GELF::Protocol::TCP
+        puts "Gelf>Connecting #{host} #{port} TCP"
         @sender = GELF::Transport::TCP.new([[host, port]])
       else
+        puts "Gelf>Connecting #{host} #{port} UDP"
         @sender = GELF::Transport::UDP.new([[host, port]])
       end
       self.level_mapping = :logger

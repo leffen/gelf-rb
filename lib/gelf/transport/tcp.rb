@@ -31,6 +31,7 @@ module GELF
       end
 
       def send(message)
+        puts "TCP sending #{message}"
         loop do
           sent = false
           sockets = @sockets.map { |s|
